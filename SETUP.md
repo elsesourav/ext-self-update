@@ -1,43 +1,39 @@
-# Client First-Time Setup (No Local Files Needed)
+# Client Setup (Unmanaged Auto-Sync + Manual Reload)
 
 This guide is for client machines that do not have this repository cloned.
 Everything is done from terminal commands only.
 
 ## What This Setup Does
 
-- Applies managed Chrome policy to force-install extension ID `jngcnbojdjmlecbcmkdbfinkhienmpmm`
-- Uses update manifest URL:
-  - https://raw.githubusercontent.com/elsesourav/ext-self-update/main/artifacts/updates.xml
-- On macOS, writes both machine and active-user managed preference policy files
-- Flushes macOS preference cache daemons
-- Restarts Chrome process
-- Lets Chrome install the extension automatically
+- Downloads extension code from GitHub to a local unpacked folder.
+- Runs background sync every 15 minutes.
+- Force-cleans local folder to match current GitHub branch exactly.
+- Leaves reload manual in Chrome (`Reload` button on extension card).
+
+Important:
+
+- Any local file edits inside the unpacked extension folder are deleted on sync.
 
 ## Requirements
 
-- Google Chrome installed on the client machine
-- Admin rights on the client machine
+- Google Chrome installed
+- Git installed
 - Network access to:
   - raw.githubusercontent.com
   - github.com
-- Organization policy allows managed Chrome policies
 
-## One-Command Install (Fast)
+## One-Command Install
 
 ### macOS
 
-Run in Terminal:
-
 ```bash
-curl -fsSL https://raw.githubusercontent.com/elsesourav/ext-self-update/main/policy/macos/install-first-time-client.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/elsesourav/ext-self-update/main/policy/macos/install-unmanaged-auto-sync.sh | bash
 ```
 
-### Windows
-
-Run in Administrator PowerShell:
+### Windows (PowerShell)
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -Command "iwr https://raw.githubusercontent.com/elsesourav/ext-self-update/main/policy/windows/install-first-time-client.ps1 -UseBasicParsing | iex"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "iwr https://raw.githubusercontent.com/elsesourav/ext-self-update/main/policy/windows/install-unmanaged-auto-sync.ps1 -UseBasicParsing | iex"
 ```
 
 ## Safer Install (Download, Review, Then Run)
@@ -45,122 +41,92 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command "iwr https://raw.githubus
 ### macOS
 
 ```bash
-curl -fsSL -o /tmp/ext-self-update-install.sh https://raw.githubusercontent.com/elsesourav/ext-self-update/main/policy/macos/install-first-time-client.sh
-cat /tmp/ext-self-update-install.sh
-sudo bash /tmp/ext-self-update-install.sh
-rm -f /tmp/ext-self-update-install.sh
+curl -fsSL -o /tmp/ext-self-update-install-unmanaged.sh https://raw.githubusercontent.com/elsesourav/ext-self-update/main/policy/macos/install-unmanaged-auto-sync.sh
+cat /tmp/ext-self-update-install-unmanaged.sh
+bash /tmp/ext-self-update-install-unmanaged.sh
+rm -f /tmp/ext-self-update-install-unmanaged.sh
 ```
 
 ### Windows
 
-Run in Administrator PowerShell:
-
 ```powershell
-$url = "https://raw.githubusercontent.com/elsesourav/ext-self-update/main/policy/windows/install-first-time-client.ps1"
-$path = "$env:TEMP\ext-self-update-install-first-time-client.ps1"
+$url = "https://raw.githubusercontent.com/elsesourav/ext-self-update/main/policy/windows/install-unmanaged-auto-sync.ps1"
+$path = "$env:TEMP\ext-self-update-install-unmanaged-auto-sync.ps1"
 iwr $url -OutFile $path -UseBasicParsing
 Get-Content $path
 powershell -NoProfile -ExecutionPolicy Bypass -File $path
 Remove-Item $path -Force
 ```
 
-## Verify On Client
+## First Load In Chrome
 
-1. Open `chrome://policy`
-2. Click `Reload policies`
-3. Confirm `ExtensionInstallForcelist` exists
-4. Open `chrome://extensions`
-5. Confirm extension is installed and enabled
+1. Open `chrome://extensions`
+2. Enable `Developer mode`
+3. Click `Load unpacked`
+4. Select:
+   - macOS: `~/ext-self-update-unpacked`
+   - Windows: `%USERPROFILE%\ext-self-update-unpacked`
 
-Expected extension ID:
+## Apply Updates (Manual Reload)
 
-- jngcnbojdjmlecbcmkdbfinkhienmpmm
-
-## Optional CLI Verification
+1. Wait for scheduler (15 minutes), or force sync now:
 
 ### macOS
 
 ```bash
-defaults read "/Library/Managed Preferences/com.google.Chrome.plist" ExtensionInstallForcelist
-
-# User-scope fallback file (replace USERNAME if needed)
-defaults read "/Library/Managed Preferences/$(stat -f%Su /dev/console)/com.google.Chrome.plist" ExtensionInstallForcelist 2>/dev/null || true
+bash "$HOME/.ext-self-update/sync-unmanaged-unpacked.sh"
 ```
 
 ### Windows
 
 ```powershell
-reg query "HKLM\Software\Policies\Google\Chrome\ExtensionInstallForcelist" /v 1
+powershell -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\.ext-self-update\sync-unmanaged-unpacked.ps1"
 ```
 
-## If Extension Does Not Install
+2. Open `chrome://extensions`
+3. Click `Reload` for the extension
 
-1. Check managed policy is present in `chrome://policy`
-2. Check update manifest is reachable:
+## Check Sync Logs
 
 ### macOS
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/elsesourav/ext-self-update/main/artifacts/updates.xml
+tail -n 50 "$HOME/.ext-self-update/sync.log"
 ```
 
 ### Windows
 
 ```powershell
-iwr https://raw.githubusercontent.com/elsesourav/ext-self-update/main/artifacts/updates.xml -UseBasicParsing | Select-Object -ExpandProperty Content
+Get-Content "$env:USERPROFILE\.ext-self-update\sync.log" -Tail 50
 ```
 
-3. Confirm GitHub release asset exists and is reachable:
-
-- https://github.com/elsesourav/ext-self-update/releases/download/v1.0.0/ext-self-update.crx
-
-4. Close and reopen Chrome, then check `chrome://extensions` again
-
-## If `chrome://policy` Shows "No policies set" On macOS
-
-Run these commands in Terminal:
-
-```bash
-# 1) Re-run installer (writes machine + user policy files and refreshes cache)
-curl -fsSL https://raw.githubusercontent.com/elsesourav/ext-self-update/main/policy/macos/install-first-time-client.sh | sudo bash
-
-# 2) Confirm policy files exist and contain ExtensionInstallForcelist
-sudo ls -l "/Library/Managed Preferences/com.google.Chrome.plist"
-sudo /usr/bin/plutil -p "/Library/Managed Preferences/com.google.Chrome.plist"
-
-user_name="$(stat -f%Su /dev/console)"
-sudo ls -l "/Library/Managed Preferences/${user_name}/com.google.Chrome.plist"
-sudo /usr/bin/plutil -p "/Library/Managed Preferences/${user_name}/com.google.Chrome.plist"
-
-# 3) Fully restart Chrome and reload policy page
-killall "Google Chrome" >/dev/null 2>&1 || true
-killall "Google Chrome Helper" >/dev/null 2>&1 || true
-open -a "Google Chrome"
-```
-
-Then open `chrome://policy`, click `Reload policies`, and verify `ExtensionInstallForcelist` appears.
-
-## Rollback / Remove From Client
+## Disable Auto-Sync
 
 ### macOS
 
 ```bash
-sudo rm -f "/Library/Managed Preferences/com.google.Chrome.plist"
+curl -fsSL https://raw.githubusercontent.com/elsesourav/ext-self-update/main/policy/macos/uninstall-unmanaged-auto-sync.sh | bash
 ```
-
-Then restart Chrome.
 
 ### Windows
 
-Run in Administrator PowerShell:
-
 ```powershell
-reg delete "HKLM\Software\Policies\Google\Chrome\ExtensionInstallForcelist" /v 1 /f
+powershell -NoProfile -ExecutionPolicy Bypass -Command "iwr https://raw.githubusercontent.com/elsesourav/ext-self-update/main/policy/windows/uninstall-unmanaged-auto-sync.ps1 -UseBasicParsing | iex"
 ```
 
-Then restart Chrome.
+## Troubleshooting
 
-## Notes
+### Sync script says git missing
 
-- This is managed-policy installation, not normal user installation.
-- For unmanaged devices, full automatic off-store install/update is not available.
+Install git and run installer again.
+
+### Chrome extension does not update
+
+1. Force sync with command above
+2. Check logs
+3. Click `Reload` in `chrome://extensions`
+
+### Unexpected local changes disappeared
+
+This is expected in clean-sync mode.
+The folder is reset to GitHub branch state on each sync.

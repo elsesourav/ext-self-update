@@ -1,26 +1,45 @@
-# Self Update Test Extension (Windows + macOS Managed Chrome)
+# Self Update Test Extension (Unmanaged Auto-Sync)
 
-This repository is now pre-wired for your GitHub project:
+This project now uses an unmanaged client update flow only.
 
-- Repo: https://github.com/elsesourav/ext-self-update
-- Extension ID: jngcnbojdjmlecbcmkdbfinkhienmpmm
-- Update manifest URL used by Chrome: https://raw.githubusercontent.com/elsesourav/ext-self-update/main/artifacts/updates.xml
+- Clients auto-sync extension files from GitHub every 15 minutes.
+- Clients manually click Reload in chrome://extensions to apply updates.
+- Old local files and local edits are removed on each sync (clean-sync).
 
-For client machines with only terminal access (no local repo files), use SETUP.md.
+Repo:
 
-## Important Limitation
+- https://github.com/elsesourav/ext-self-update
 
-Automatic off-store updates on Windows and macOS require managed Chrome policy.
-For unmanaged consumer devices, full automatic off-store update is not supported.
+Use SETUP.md for full client instructions.
 
-## Already Configured
+## Quick Install (Client)
 
-- manifest.json contains:
-  - fixed key (for stable extension ID)
-  - update_url pointing to your GitHub raw updates.xml
-- artifacts/updates.xml is created for version 1.0.0.
-- policy templates exist for both macOS and Windows.
-- scripts are provided for both bash and PowerShell.
+### macOS
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/elsesourav/ext-self-update/main/policy/macos/install-unmanaged-auto-sync.sh | bash
+```
+
+### Windows (PowerShell)
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -Command "iwr https://raw.githubusercontent.com/elsesourav/ext-self-update/main/policy/windows/install-unmanaged-auto-sync.ps1 -UseBasicParsing | iex"
+```
+
+After first sync:
+
+1. Open chrome://extensions
+2. Enable Developer mode
+3. Click Load unpacked
+4. Select:
+   - macOS: ~/ext-self-update-unpacked
+   - Windows: %USERPROFILE%\\ext-self-update-unpacked
+
+## Update Behavior
+
+1. Sync runs every 15 minutes.
+2. Sync force-resets local folder to current GitHub branch state.
+3. User clicks Reload on extension card to apply code.
 
 ## Project Files
 
@@ -30,147 +49,15 @@ For unmanaged consumer devices, full automatic off-store update is not supported
 - popup.html
 - popup.js
 - popup.css
-- artifacts/updates.xml
-- artifacts/updates.xml.template
-- scripts/package-extension.sh
-- scripts/package-extension.ps1
-- scripts/extension-id-from-pem.sh
-- scripts/extension-id-from-pem.ps1
-- scripts/generate-updates-xml.sh
-- scripts/generate-updates-xml.ps1
-- policy/com.google.Chrome.plist.template
-- policy/macos/install-first-time-client.sh
-- policy/windows/chrome-force-install.reg.template
-- policy/windows/install-first-time-client.ps1
-- policy/windows/set-force-install-policy.ps1
+- policy/macos/install-unmanaged-auto-sync.sh
+- policy/macos/sync-unmanaged-unpacked.sh
+- policy/macos/uninstall-unmanaged-auto-sync.sh
+- policy/windows/install-unmanaged-auto-sync.ps1
+- policy/windows/sync-unmanaged-unpacked.ps1
+- policy/windows/uninstall-unmanaged-auto-sync.ps1
 
-## Signing Key
+## Maintainer Notes
 
-A local signing key is used at .local/ext-self-update.pem.
-This directory is gitignored.
-
-Do not delete or rotate this key unless you intentionally want a new extension ID.
-
-## macOS Build + Release
-
-1. Package CRX using the same PEM key:
-
-```bash
-./scripts/package-extension.sh "$PWD" ".local/ext-self-update.pem"
-```
-
-2. Upload the generated CRX as release asset named ext-self-update.crx under tag v1.0.0:
-
-https://github.com/elsesourav/ext-self-update/releases/tag/v1.0.0
-
-3. Commit and push artifacts/updates.xml so the raw URL serves the latest manifest.
-
-## Windows Build + Release
-
-1. Package CRX in PowerShell:
-
-```powershell
-.\scripts\package-extension.ps1 -ExtensionDir (Get-Location).Path -PemKeyPath ".\.local\ext-self-update.pem"
-```
-
-2. Upload ext-self-update.crx to the matching GitHub release tag.
-
-3. Commit and push artifacts/updates.xml after each version change.
-
-## Generate updates.xml For New Version
-
-Example for v1.0.1:
-
-### bash
-
-```bash
-./scripts/generate-updates-xml.sh \
-  "jngcnbojdjmlecbcmkdbfinkhienmpmm" \
-  "1.0.1" \
-  "https://github.com/elsesourav/ext-self-update/releases/download/v1.0.1/ext-self-update.crx" \
-  "artifacts/updates.xml"
-```
-
-### PowerShell
-
-```powershell
-.\scripts\generate-updates-xml.ps1 -ExtensionId "jngcnbojdjmlecbcmkdbfinkhienmpmm" -Version "1.0.1" -CodebaseUrl "https://github.com/elsesourav/ext-self-update/releases/download/v1.0.1/ext-self-update.crx" -OutputPath "artifacts/updates.xml"
-```
-
-Then bump manifest.json version to the same value and publish both CRX + updates.xml.
-
-## First-Time Client Setup (One Command)
-
-Use these commands directly on client machines.
-
-### macOS (local repo)
-
-```bash
-sudo bash policy/macos/install-first-time-client.sh
-```
-
-### macOS (without cloning repo)
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/elsesourav/ext-self-update/main/policy/macos/install-first-time-client.sh | sudo bash
-```
-
-### Windows (local repo, Administrator PowerShell)
-
-```powershell
-.\policy\windows\install-first-time-client.ps1
-```
-
-### Windows (without cloning repo, Administrator PowerShell)
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -Command "iwr https://raw.githubusercontent.com/elsesourav/ext-self-update/main/policy/windows/install-first-time-client.ps1 -UseBasicParsing | iex"
-```
-
-After running the command on the client:
-
-1. Open chrome://policy and click Reload policies.
-2. Open chrome://extensions and confirm the extension is installed.
-
-## Managed Policy Setup (Manual Options)
-
-### macOS
-
-Use policy/com.google.Chrome.plist.template through MDM or managed preferences.
-
-Verify in:
-
-- chrome://policy
-- chrome://extensions
-
-### Windows
-
-Option A: import policy/windows/chrome-force-install.reg.template as admin.
-
-Option B: run policy/windows/set-force-install-policy.ps1:
-
-```powershell
-.\policy\windows\set-force-install-policy.ps1 -PolicyHive HKLM
-```
-
-Use HKCU for current-user lab testing if you do not have admin rights.
-
-## Update Flow (All Platforms)
-
-1. Bump version in manifest.json.
-2. Package CRX with the same PEM key.
-3. Upload CRX to matching GitHub release tag.
-4. Regenerate artifacts/updates.xml with same version and new release URL.
-5. Commit and push updates.xml.
-6. On client Chrome, force check from chrome://extensions (Developer mode > Update) for quick testing.
-
-## Private Collaboration Note
-
-If this repository becomes private, Chrome update checks may not be able to access private release assets.
-In that case, keep source private but host updates.xml and CRX on a public or internal unauthenticated endpoint reachable by managed devices.
-
-## Security Notes
-
-- Never commit PEM keys.
-- Keep .local/ext-self-update.pem in secure backup.
-- Signed CRX files are deployable release artifacts.
+- Push changes to main branch to distribute new code.
+- Clients pull updates automatically via scheduler.
+- Clients apply updates manually with Reload in chrome://extensions.

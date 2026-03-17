@@ -1,10 +1,12 @@
 const VERSION = chrome.runtime.getManifest().version;
+const UPDATE_MODE = "unmanaged-auto-sync-manual-reload";
 
 async function writeLifecycle(eventName, details) {
   const lifecycle = {
     eventName,
     details,
     version: VERSION,
+    updateMode: UPDATE_MODE,
     at: new Date().toISOString(),
   };
 
@@ -13,7 +15,7 @@ async function writeLifecycle(eventName, details) {
     currentVersion: VERSION,
   });
 
-  console.log("[self-update-test]", lifecycle);
+  console.log("[self-update-unmanaged]", lifecycle);
 }
 
 chrome.runtime.onInstalled.addListener((details) => {
@@ -39,6 +41,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     .then((stored) => {
       sendResponse({
         version: VERSION,
+        updateMode: UPDATE_MODE,
         currentVersion: stored.currentVersion || VERSION,
         counter: stored.counter || 0,
         lifecycle: stored.lifecycle || null,
@@ -47,6 +50,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     .catch((error) => {
       sendResponse({
         version: VERSION,
+        updateMode: UPDATE_MODE,
         currentVersion: VERSION,
         counter: 0,
         lifecycle: null,

@@ -31,10 +31,11 @@ async function getStatus() {
 
 async function refreshStatus() {
   const status = await getStatus();
+  const mode = status.updateMode || "unmanaged-auto-sync-manual-reload";
 
   versionEl.textContent = status.version || "unknown";
   counterEl.textContent = String(status.counter || 0);
-  lifecycleEl.textContent = status.lifecycle?.eventName || "-";
+  lifecycleEl.textContent = status.lifecycle?.eventName || `ready (${mode})`;
   eventTimeEl.textContent = formatTime(status.lifecycle?.at);
 }
 
