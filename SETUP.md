@@ -8,6 +8,8 @@ Everything is done from terminal commands only.
 - Applies managed Chrome policy to force-install extension ID `jngcnbojdjmlecbcmkdbfinkhienmpmm`
 - Uses update manifest URL:
   - https://raw.githubusercontent.com/elsesourav/ext-self-update/main/artifacts/updates.xml
+- On macOS, writes both machine and active-user managed preference policy files
+- Flushes macOS preference cache daemons
 - Restarts Chrome process
 - Lets Chrome install the extension automatically
 
@@ -80,6 +82,9 @@ Expected extension ID:
 
 ```bash
 defaults read "/Library/Managed Preferences/com.google.Chrome.plist" ExtensionInstallForcelist
+
+# User-scope fallback file (replace USERNAME if needed)
+defaults read "/Library/Managed Preferences/$(stat -f%Su /dev/console)/com.google.Chrome.plist" ExtensionInstallForcelist 2>/dev/null || true
 ```
 
 ### Windows
@@ -110,6 +115,30 @@ iwr https://raw.githubusercontent.com/elsesourav/ext-self-update/main/artifacts/
 - https://github.com/elsesourav/ext-self-update/releases/download/v1.0.0/ext-self-update.crx
 
 4. Close and reopen Chrome, then check `chrome://extensions` again
+
+## If `chrome://policy` Shows "No policies set" On macOS
+
+Run these commands in Terminal:
+
+```bash
+# 1) Re-run installer (writes machine + user policy files and refreshes cache)
+curl -fsSL https://raw.githubusercontent.com/elsesourav/ext-self-update/main/policy/macos/install-first-time-client.sh | sudo bash
+
+# 2) Confirm policy files exist and contain ExtensionInstallForcelist
+sudo ls -l "/Library/Managed Preferences/com.google.Chrome.plist"
+sudo /usr/bin/plutil -p "/Library/Managed Preferences/com.google.Chrome.plist"
+
+user_name="$(stat -f%Su /dev/console)"
+sudo ls -l "/Library/Managed Preferences/${user_name}/com.google.Chrome.plist"
+sudo /usr/bin/plutil -p "/Library/Managed Preferences/${user_name}/com.google.Chrome.plist"
+
+# 3) Fully restart Chrome and reload policy page
+killall "Google Chrome" >/dev/null 2>&1 || true
+killall "Google Chrome Helper" >/dev/null 2>&1 || true
+open -a "Google Chrome"
+```
+
+Then open `chrome://policy`, click `Reload policies`, and verify `ExtensionInstallForcelist` appears.
 
 ## Rollback / Remove From Client
 
