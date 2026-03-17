@@ -6,6 +6,8 @@ This repository is now pre-wired for your GitHub project:
 - Extension ID: jngcnbojdjmlecbcmkdbfinkhienmpmm
 - Update manifest URL used by Chrome: https://raw.githubusercontent.com/elsesourav/ext-self-update/main/artifacts/updates.xml
 
+For client machines with only terminal access (no local repo files), use SETUP.md.
+
 ## Important Limitation
 
 Automatic off-store updates on Windows and macOS require managed Chrome policy.
@@ -22,6 +24,7 @@ For unmanaged consumer devices, full automatic off-store update is not supported
 
 ## Project Files
 
+- SETUP.md
 - manifest.json
 - background.js
 - popup.html
