@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Self Update Test</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <main class="card">
+      <h1>Self Update Test</h1>
+      <p class="meta">Installed version: <strong id="version">-</strong></p>
+      <p class="meta">Current counter: <strong id="counter">0</strong></p>
+      <p class="meta">
+        Last lifecycle event: <strong id="lifecycle">-</strong>
+      </p>
+      <p class="meta">Last event time: <strong id="event-time">-</strong></p>
+
+      <div class="actions">
+        <button id="increment" type="button">Increment Counter</button>
+        <button id="reset" type="button">Reset Counter</button>
+        <button id="refresh" type="button">Refresh Status</button>
+      </div>
+    </main>
+
+    <script src="popup.js"></script>
+  </body>
+</html>
