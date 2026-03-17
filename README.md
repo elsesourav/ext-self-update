@@ -36,7 +36,9 @@ For unmanaged consumer devices, full automatic off-store update is not supported
 - scripts/generate-updates-xml.sh
 - scripts/generate-updates-xml.ps1
 - policy/com.google.Chrome.plist.template
+- policy/macos/install-first-time-client.sh
 - policy/windows/chrome-force-install.reg.template
+- policy/windows/install-first-time-client.ps1
 - policy/windows/set-force-install-policy.ps1
 
 ## Signing Key
@@ -94,7 +96,40 @@ Example for v1.0.1:
 
 Then bump manifest.json version to the same value and publish both CRX + updates.xml.
 
-## Managed Policy Setup
+## First-Time Client Setup (One Command)
+
+Use these commands directly on client machines.
+
+### macOS (local repo)
+
+```bash
+sudo bash policy/macos/install-first-time-client.sh
+```
+
+### macOS (without cloning repo)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/elsesourav/ext-self-update/main/policy/macos/install-first-time-client.sh | sudo bash
+```
+
+### Windows (local repo, Administrator PowerShell)
+
+```powershell
+.\policy\windows\install-first-time-client.ps1
+```
+
+### Windows (without cloning repo, Administrator PowerShell)
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -Command "iwr https://raw.githubusercontent.com/elsesourav/ext-self-update/main/policy/windows/install-first-time-client.ps1 -UseBasicParsing | iex"
+```
+
+After running the command on the client:
+
+1. Open chrome://policy and click Reload policies.
+2. Open chrome://extensions and confirm the extension is installed.
+
+## Managed Policy Setup (Manual Options)
 
 ### macOS
 
