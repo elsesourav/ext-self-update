@@ -3,8 +3,9 @@
   "name": "Self Update Test Extension",
   "description": "Minimal extension to validate managed self-updates from GitHub-hosted artifacts.",
   "version": "1.0.0",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAmBvh/Suburh/UM3fS7ob0EV672bD/bFCTsJrQ15o1oDyuMfSDWPDk4+DaGW/j+sRKQaL2IaLmKBr1JMNkCg4Hcxq2rXke2M8tooyiWFF04n0ummyqQoWlqoyadHuQHMMNN6ceNBzI2nKrbqTyVG0brT6GYIYd7cf0QmZAGhaLUzSkOf+mGz7HFSwN4nJ5qa2MWD7jovJlXZmTujvu6jba415mdjvClO/5UE2eDjjjYLbQTCoANq4Ityxkn9Rlfx5ikml43c8xdcSjqyAdTvhr9AeI4kQ78UEt+FRZu0AI52UIOldsfUsMRYUUFREID9OpgNxNfkQGgAKhwGw1sQQQwIDAQAB",
   "minimum_chrome_version": "116",
-  "update_url": "https://example.com/updates.xml",
+  "update_url": "https://raw.githubusercontent.com/elsesourav/ext-self-update/main/artifacts/updates.xml",
   "permissions": ["storage"],
   "background": {
     "service_worker": "background.js"

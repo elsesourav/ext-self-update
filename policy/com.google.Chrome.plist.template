@@ -4,7 +4,7 @@
   <dict>
     <key>ExtensionInstallForcelist</key>
     <array>
-      <string>YOUR_EXTENSION_ID;https://YOUR_GITHUB_USERNAME.github.io/ext-self-update-artifacts/updates.xml</string>
+      <string>jngcnbojdjmlecbcmkdbfinkhienmpmm;https://raw.githubusercontent.com/elsesourav/ext-self-update/main/artifacts/updates.xml</string>
     </array>
   </dict>
 </plist>

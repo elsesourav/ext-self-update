@@ -1,179 +1,138 @@
-# Self Update Test Extension (No Chrome Web Store)
+# Self Update Test Extension (Windows + macOS Managed Chrome)
 
-This project is a minimal MV3 extension made for testing self-update flows outside the Chrome Web Store.
+This repository is now pre-wired for your GitHub project:
 
-## Important Reality Check
+- Repo: https://github.com/elsesourav/ext-self-update
+- Extension ID: jngcnbojdjmlecbcmkdbfinkhienmpmm
+- Update manifest URL used by Chrome: https://raw.githubusercontent.com/elsesourav/ext-self-update/main/artifacts/updates.xml
 
-- Fully automatic off-store updates on macOS Chrome are practical only for enterprise-managed devices (policy-managed install).
-- This repository is set up for that managed flow.
-- For unmanaged consumer Chrome, you cannot rely on fully automatic off-store install/update.
+## Important Limitation
 
-## What Is In This Repo
+Automatic off-store updates on Windows and macOS require managed Chrome policy.
+For unmanaged consumer devices, full automatic off-store update is not supported.
 
-- Minimal extension code (popup + service worker)
-- Packaging script for CRX generation
-- Script to calculate extension ID from the PEM key
-- Script to generate updates.xml
+## Already Configured
 
-## Files
+- manifest.json contains:
+  - fixed key (for stable extension ID)
+  - update_url pointing to your GitHub raw updates.xml
+- artifacts/updates.xml is created for version 1.0.0.
+- policy templates exist for both macOS and Windows.
+- scripts are provided for both bash and PowerShell.
+
+## Project Files
 
 - manifest.json
 - background.js
 - popup.html
 - popup.js
 - popup.css
-- scripts/package-extension.sh
-- scripts/extension-id-from-pem.sh
-- scripts/generate-updates-xml.sh
+- artifacts/updates.xml
 - artifacts/updates.xml.template
+- scripts/package-extension.sh
+- scripts/package-extension.ps1
+- scripts/extension-id-from-pem.sh
+- scripts/extension-id-from-pem.ps1
+- scripts/generate-updates-xml.sh
+- scripts/generate-updates-xml.ps1
 - policy/com.google.Chrome.plist.template
+- policy/windows/chrome-force-install.reg.template
+- policy/windows/set-force-install-policy.ps1
 
-## Prerequisites
+## Signing Key
 
-- macOS
-- Google Chrome installed
-- Enterprise policy control for Chrome test devices
-- GitHub account
-- Public HTTPS endpoint for update artifacts (GitHub Pages or internal static server)
+A local signing key is used at .local/ext-self-update.pem.
+This directory is gitignored.
 
-## Private Collaboration + Public Artifacts Pattern
+Do not delete or rotate this key unless you intentionally want a new extension ID.
 
-If your source must stay private, use two repositories:
+## macOS Build + Release
 
-1. Private source repository: keep all extension code here and add collaborators/teams normally.
-2. Public artifact repository: store only signed CRX files and updates.xml.
-
-Why: Chrome extension auto-update checks do not use your private GitHub auth session, so private GitHub release assets are not a reliable direct updater source.
-
-If everything must remain private, host updates.xml and CRX files on an internal static server reachable by managed devices without interactive login.
-
-## 1) Set Your Update URL In Manifest
-
-Edit manifest.json and replace update_url with your stable updates.xml URL.
-
-Example:
-
-https://YOUR_GITHUB_USERNAME.github.io/ext-self-update-artifacts/updates.xml
-
-Do this before packaging releases.
-
-## 2) Generate First Package + Signing Key
-
-From this project directory:
+1. Package CRX using the same PEM key:
 
 ```bash
-./scripts/package-extension.sh "$PWD"
+./scripts/package-extension.sh "$PWD" ".local/ext-self-update.pem"
 ```
 
-- First run creates .crx and .pem (private key).
-- Keep the PEM file secret and backed up.
-- Every future release must use the same PEM key, or update/install will break due to changed extension identity.
+2. Upload the generated CRX as release asset named ext-self-update.crx under tag v1.0.0:
 
-## 3) Get Deterministic Extension ID From PEM
+https://github.com/elsesourav/ext-self-update/releases/tag/v1.0.0
 
-```bash
-./scripts/extension-id-from-pem.sh /secure/path/ext-self-update.pem
+3. Commit and push artifacts/updates.xml so the raw URL serves the latest manifest.
+
+## Windows Build + Release
+
+1. Package CRX in PowerShell:
+
+```powershell
+.\scripts\package-extension.ps1 -ExtensionDir (Get-Location).Path -PemKeyPath ".\.local\ext-self-update.pem"
 ```
 
-Save this ID. You need it for:
+2. Upload ext-self-update.crx to the matching GitHub release tag.
 
-- Chrome enterprise policy
-- updates.xml appid field
+3. Commit and push artifacts/updates.xml after each version change.
 
-## 4) Prepare updates.xml
+## Generate updates.xml For New Version
 
-Generate updates.xml:
+Example for v1.0.1:
+
+### bash
 
 ```bash
 ./scripts/generate-updates-xml.sh \
-  "YOUR_EXTENSION_ID" \
-  "1.0.0" \
-  "https://github.com/OWNER/ARTIFACT_REPO/releases/download/v1.0.0/ext-self-update.crx" \
-  "./artifacts/updates.xml"
+  "jngcnbojdjmlecbcmkdbfinkhienmpmm" \
+  "1.0.1" \
+  "https://github.com/elsesourav/ext-self-update/releases/download/v1.0.1/ext-self-update.crx" \
+  "artifacts/updates.xml"
 ```
 
-Upload artifacts/updates.xml to a stable public URL, such as GitHub Pages.
+### PowerShell
 
-## 5) Publish Release Artifacts On GitHub
-
-In your artifact repo:
-
-1. Create GitHub release tag v1.0.0.
-2. Upload ext-self-update.crx as a release asset.
-3. Publish updates.xml at your stable URL.
-
-## 6) Configure Managed Chrome Policy On macOS
-
-Use enterprise policy (MDM/profile preferred).
-
-Policy value format:
-
-- ExtensionInstallForcelist item: EXTENSION_ID;UPDATE_XML_URL
-
-Example value:
-
-YOUR_EXTENSION_ID;https://YOUR_GITHUB_USERNAME.github.io/ext-self-update-artifacts/updates.xml
-
-A ready template is included at policy/com.google.Chrome.plist.template.
-
-Quick local lab-style plist example (for testing environments where you control managed preferences):
-
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-  <dict>
-    <key>ExtensionInstallForcelist</key>
-    <array>
-      <string>YOUR_EXTENSION_ID;https://YOUR_GITHUB_USERNAME.github.io/ext-self-update-artifacts/updates.xml</string>
-    </array>
-  </dict>
-</plist>
+```powershell
+.\scripts\generate-updates-xml.ps1 -ExtensionId "jngcnbojdjmlecbcmkdbfinkhienmpmm" -Version "1.0.1" -CodebaseUrl "https://github.com/elsesourav/ext-self-update/releases/download/v1.0.1/ext-self-update.crx" -OutputPath "artifacts/updates.xml"
 ```
 
-Deploy policy, restart Chrome, then verify in:
+Then bump manifest.json version to the same value and publish both CRX + updates.xml.
+
+## Managed Policy Setup
+
+### macOS
+
+Use policy/com.google.Chrome.plist.template through MDM or managed preferences.
+
+Verify in:
 
 - chrome://policy
 - chrome://extensions
 
-## 7) Release Update v1.0.1
+### Windows
 
-1. Bump version in manifest.json from 1.0.0 to 1.0.1.
-2. Re-package with the same PEM key:
+Option A: import policy/windows/chrome-force-install.reg.template as admin.
 
-```bash
-./scripts/package-extension.sh "$PWD" "/secure/path/ext-self-update.pem"
+Option B: run policy/windows/set-force-install-policy.ps1:
+
+```powershell
+.\policy\windows\set-force-install-policy.ps1 -PolicyHive HKLM
 ```
 
-3. Upload new CRX to artifact repo release v1.0.1.
-4. Re-generate updates.xml pointing to v1.0.1 CRX URL and version 1.0.1.
-5. Publish updated updates.xml to the same stable URL.
+Use HKCU for current-user lab testing if you do not have admin rights.
 
-Managed clients should auto-update. You can force a check from chrome://extensions using "Update" in developer mode.
+## Update Flow (All Platforms)
 
-## 8) Validate End To End
+1. Bump version in manifest.json.
+2. Package CRX with the same PEM key.
+3. Upload CRX to matching GitHub release tag.
+4. Regenerate artifacts/updates.xml with same version and new release URL.
+5. Commit and push updates.xml.
+6. On client Chrome, force check from chrome://extensions (Developer mode > Update) for quick testing.
 
-- Confirm extension installs via policy (without manual CRX install).
-- Open popup and verify Installed version.
-- Publish a newer version and force update check.
-- Confirm popup version changes.
+## Private Collaboration Note
 
-## Troubleshooting
-
-- Extension does not install:
-  - Check chrome://policy for policy parsing errors.
-  - Ensure EXTENSION_ID matches the ID from your PEM.
-- Update does not apply:
-  - Confirm updates.xml appid equals extension ID.
-  - Confirm updates.xml version equals manifest version in CRX.
-  - Confirm CRX was signed with the same PEM key.
-  - Confirm codebase URL is reachable over HTTPS.
-- Source is private and you need collaborator access:
-  - Keep source in private repo and add collaborators/teams.
-  - Only publish binaries and updates.xml in public artifact repo.
+If this repository becomes private, Chrome update checks may not be able to access private release assets.
+In that case, keep source private but host updates.xml and CRX on a public or internal unauthenticated endpoint reachable by managed devices.
 
 ## Security Notes
 
 - Never commit PEM keys.
-- Rotate artifact credentials if leaked.
-- Treat signed CRX outputs as deployable binaries.
+- Keep .local/ext-self-update.pem in secure backup.
+- Signed CRX files are deployable release artifacts.
